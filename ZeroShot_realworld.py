@@ -53,7 +53,7 @@ def weights_init(m):
         m.weight.data.normal_(0.0, 0.001)
 
 parser = argparse.ArgumentParser(description='Single Image Dehazing')
-parser.add_argument('--TestFolderPath', type=str, default='/home/b311/data3/qilishuang/HSTS/real-world/', help='Hazy Image folder name') 
+parser.add_argument('--TestFolderPath', type=str, default='./HSTS/real-world/', help='Hazy Image folder name') 
 parser.add_argument('--SavePath', type=str, default='./results/realworld-all', help='SavePath Name')
 args = parser.parse_args()
 
