@@ -96,52 +96,7 @@ def test(args):
         print('name:', input_img[i])
 
         Hazy = imageio.imread(args.TestFolderPath+input_img[i])
-        # SOTS/OHAZE
-        # ground_truth = imageio.imread(args.TestFolderPath+'/gt/'+input_img[i].split('_')[0]+'.png')
-        # HSTS-synthetic
-        # ground_truth = imageio.imread(args.TestFolderPath+'/gt/'+input_img[i])
         
-        # 将 numpy 数组类型的图像转换为 PIL 图像
-        # Hazy_pil = Image.fromarray(Hazy)
-        # ground_truth_pil = Image.fromarray(ground_truth)
-        # ii, j, h, w = transforms.RandomCrop.get_params(Hazy_pil, output_size=(256, 256))
-        # Hazy = TF.crop(Hazy_pil, ii, j, h, w)
-        # ground_truth = TF.crop(ground_truth_pil, ii, j, h, w)
-        # # 将裁剪后的 PIL 图像转换回 numpy 数组
-        # Hazy = np.array(Hazy)
-        # ground_truth = np.array(ground_truth)
-
-
-        # # Convert to PyTorch tensor and check the shape
-        # if Hazy.ndim == 2:  # if image is grayscale, convert to RGB by repeating the channels
-        #     Hazy = np.repeat(Hazy[:, :, np.newaxis], 3, axis=2)
-        # elif Hazy.ndim == 3 and Hazy.shape[2] == 4:  # if image has alpha channel, remove it
-        #     Hazy = Hazy[:, :, :3]
-        # print(f"Before conversion: type={type(Hazy)}, shape={Hazy.shape}")
-        # Hazy = torch.from_numpy(Hazy).permute(2, 0, 1).unsqueeze(0).float().cuda(5)  # 转换为 (1, channels, height, width)
-        # print(f"After conversion: type={type(Hazy)}, shape={Hazy.shape}")
-        # # Convert to PyTorch tensor and check the shape
-        # if ground_truth.ndim == 2:  # if image is grayscale, convert to RGB by repeating the channels
-        #     ground_truth = np.repeat(ground_truth[:, :, np.newaxis], 3, axis=2)
-        # elif ground_truth.ndim == 3 and ground_truth.shape[2] == 4:  # if image has alpha channel, remove it
-        #     ground_truth = ground_truth[:, :, :3]
-        # ground_truth = torch.from_numpy(ground_truth).permute(2, 0, 1).unsqueeze(0).float().cuda(5)  # 转换为 (1, channels, height, width)
-        # print(f"Hazy shape: {Hazy.shape}")
-        # h, w = Hazy.shape[2], Hazy.shape[3]
-        # max_h = int(math.ceil(h / 256)) * 256
-        # max_w = int(math.ceil(w / 256)) * 256
-
-        # Hazy, ori_left, ori_right, ori_top, ori_down = resize_and_pad_image(Hazy, max_h, max_w)
-        # ground_truth, ori_left, ori_right, ori_top, ori_down = resize_and_pad_image(ground_truth, max_h, max_w)
-        # print(f"Hazy shape: {Hazy.shape}")
-        # print(f"Padding: left={ori_left}, right={ori_right}, top={ori_top}, down={ori_down}")
-        
-        # # 缩小图像尺寸
-        # scale_factor = 256  # 缩小一半
-        # Hazy = resize_width(Hazy, scale_factor)
-        # ground_truth = resize_width(ground_truth, scale_factor)
-        # print(f"Resized Hazy shape: {Hazy.shape}")
-        # print(f"Resized ground_truth shape: {ground_truth.shape}")
         
         # 将图像转换为 Tensor
         Input = _np2Tensor(Hazy)
@@ -190,11 +145,7 @@ def test(args):
             # # highmerge
             highlist=lap_pyramid.pyramid_decom(Inputmage)
             high=highlist[0]
-            # h, w = Inputmage.shape[2], Inputmage.shape[3]
-            # max_h = int(math.ceil(h / 256)) * 256
-            # max_w = int(math.ceil(w / 256)) * 256
-            # Inputmage, ori_left, ori_right, ori_top, ori_down = padding_image(Inputmage, max_h, max_w)
-            # high, _, _, _, _ = padding_image(high, max_h, max_w)
+          
 
             with autocast():
                 trans, atm, HazefreeImage= net(Inputmage,high, 'train')
@@ -253,38 +204,12 @@ def test(args):
                 #### total loss ####
                 loss = loss_cycle + loss_trans + loss_air + 0.001*lossMnx + 0.01*dcp_loss +loss_depth
                 if (k+1) % 200 == 1 or (k+1) % 200 == 0:
-                    # print(f"HazefreeImage shape: {HazefreeImage.shape}")
-                    # refinet = t_matting(Inputmage.detach().cpu().numpy(),high.detach().cpu().numpy(), trans[0].detach().cpu().numpy())
-                    # J = (Inputmage - (1 - trans) * atm) / trans
-                    
-                    # threshold=50
-                    # blue_threshold=0
-                    # # 计算蓝色区域的比例
-                    # blue_ratio = blue_ratio_in_image(J.squeeze(0), threshold)
-                    # # 如果蓝色区域占比超过阈值，则处理图片
-                    # if blue_ratio > blue_threshold:
+                   
                         # 处理图片
                     refinet = t_matting(Inputmage.detach().cpu().numpy(), trans[0].detach().cpu().numpy())
                     J = (Inputmage - (1 - torch.from_numpy(refinet).cuda(5))*atm)/torch.from_numpy(refinet).cuda(5)
                         # HazefreeImage =HazefreeImage
-                    # refinet = t_matting(Inputmage.detach().cpu().numpy(),high.detach().cpu().numpy(), trans[0].detach().cpu().numpy())
-                    #J = (Inputmage - (1 - torch.from_numpy(trans).cuda(5))*atm)/torch.from_numpy(trans).cuda(5)
-                    # J = (Inputmage - (1 - trans) * atm) / trans
-                # 计算去雾图像 J 和真实图像 gt 之间的 PSNR 和 SSIM 值
-                # 如果当前迭代中的 PSNR 或 SSIM 值比之前记录的最佳值高，则更新 best_psnr 和 best_ssim
-                    # if psnr(HazefreeImage, gt)>best_psnr:
-                    #     best_psnr = psnr(HazefreeImage, gt)
-                    # if ssim(HazefreeImage, gt)>best_ssim:
-                    #     best_ssim = ssim(HazefreeImage,gt)
-                    # if psnr(HazefreeImage, gt)>best_psnr:
-                    #     best_psnr = psnr(HazefreeImage, gt)
-                    #     best_ssim = ssim(HazefreeImage, gt)
-                    #     torch.save({
-                    #         'net_state_dict': net.state_dict(),
-                    #         'net_p_state_dict': net_p.state_dict(),
-                    #         # 'depthmap_state_dict': depthmap.state_dict(),
-                    #         }, best_model_path)
-                    # print('loss:', loss, 'dcp_loss:', 0.01*dcp_loss, 'current psnr:', psnr(HazefreeImage, gt), psnr(J,gt), 'current ssim:', ssim(HazefreeImage, gt), ssim(J,gt), 'best_psnr:', best_psnr, best_ssim )
+                  
                 # SOTS
                     torchvision.utils.save_image(torch.cat((HazeProducemage,Inputmage,HazefreeImage),dim=0), args.SavePath+'/'+input_img[i].split('.')[0]+'_H.png')
                     torchvision.utils.save_image(hazy_depth, args.SavePath+'/'+input_img[i].split('.')[0]+'_depth_hazy.png')
@@ -299,46 +224,24 @@ def test(args):
             scaler.update()
 
 
-        # # 训练结束后，加载最佳模型参数并用于测试
-        # best_checkpoint = torch.load(best_model_path)
-        # net.load_state_dict(best_checkpoint['net_state_dict'])
+      
         net.eval()
         with torch.no_grad():
             # # highmerge
             highlist=lap_pyramid.pyramid_decom(Input)
             high=highlist[0]
-            # h, w = Input.shape[2], Input.shape[3]
-            # max_h = int(math.ceil(h / 256)) * 256
-            # max_w = int(math.ceil(w / 256)) * 256
-            # Input, ori_left, ori_right, ori_top, ori_down = padding_image(Input, max_h, max_w)
-            # high, _, _, _, _ = padding_image(high, max_h, max_w)
+           
             flag='train'
             _trans, _atm, _out = net(Input,high, flag)
-            ## 透射率图（transmission map）的细化（refinement）
-            #refine_t1 = t_matting(Input.detach().cpu().numpy(),high.detach().cpu().numpy(), _trans[0].detach().cpu().numpy())
-            # _out = (Input - (1 - torch.from_numpy(_trans).cuda(5))*_atm)/torch.from_numpy(_trans).cuda(5)
-            # _out= (Input - (1 - _trans)*_atm)/_trans
+          
             _out = torch.clamp(_out, 0, 1)
 
             flag='test'
             _trans, _atm= net(Input,high,flag)
-            # 透射率图（transmission map）的细化（refinement）
-            # _GT = (Input - (1 - _trans)*_atm)/_trans
+          
             refine_t = t_matting(Input.detach().cpu().numpy(), _trans[0].detach().cpu().numpy())
             _GT = (Input - (1 - torch.from_numpy(refine_t).cuda(5))*_atm)/torch.from_numpy(refine_t).cuda(5)
-            # threshold=50
-            # blue_threshold=0.001
-            # # 计算蓝色区域的比例
-            # blue_ratio = blue_ratio_in_image(_GT.squeeze(0), threshold)
-            # # 如果蓝色区域占比超过阈值，则处理图片
-            # if blue_ratio > blue_threshold:
-            #     # 处理图片
-            #     refine_t = t_matting(Input.detach().cpu().numpy(), _trans[0].detach().cpu().numpy())
-            #     _GT = (Input - (1 - torch.from_numpy(refine_t).cuda(5))*_atm)/torch.from_numpy(refine_t).cuda(5)
             
-            #_GT = (Input - (1 - torch.from_numpy(_trans).cuda(5))*_atm)/torch.from_numpy(_trans).cuda(5)
-            # _GT = (Input - (1 - _trans)*_atm)/_trans
-            # _out = torch.clamp(_out, 0, 1)
             _GT = torch.clamp(_GT, 0, 1)
         _out = TransF(_out, Hx, Wx)
         _GT = TransF(_GT, Hx, Wx)
