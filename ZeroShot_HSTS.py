@@ -226,15 +226,7 @@ def test(args):
                     refinet = t_matting(Inputmage.detach().cpu().numpy(), trans[0].detach().cpu().numpy())
                     J = (Inputmage - (1 - torch.from_numpy(refinet).cuda(5))*atm)/torch.from_numpy(refinet).cuda(5)
                         # HazefreeImage =HazefreeImage
-                    # refinet = t_matting(Inputmage.detach().cpu().numpy(),high.detach().cpu().numpy(), trans[0].detach().cpu().numpy())
-                    #J = (Inputmage - (1 - torch.from_numpy(trans).cuda(5))*atm)/torch.from_numpy(trans).cuda(5)
-                    # J = (Inputmage - (1 - trans) * atm) / trans
-                # 计算去雾图像 J 和真实图像 gt 之间的 PSNR 和 SSIM 值
-                # 如果当前迭代中的 PSNR 或 SSIM 值比之前记录的最佳值高，则更新 best_psnr 和 best_ssim
-                    # if psnr(HazefreeImage, gt)>best_psnr:
-                    #     best_psnr = psnr(HazefreeImage, gt)
-                    # if ssim(HazefreeImage, gt)>best_ssim:
-                    #     best_ssim = ssim(HazefreeImage,gt)
+            
                     if psnr(HazefreeImage, gt)>best_psnr:
                         best_psnr = psnr(HazefreeImage, gt)
                         best_ssim = ssim(HazefreeImage, gt)
@@ -269,16 +261,11 @@ def test(args):
            
             flag='train'
             _trans, _atm, _out = net(Input,high, flag)
-            ## 透射率图（transmission map）的细化（refinement）
-            #refine_t1 = t_matting(Input.detach().cpu().numpy(),high.detach().cpu().numpy(), _trans[0].detach().cpu().numpy())
-            # _out = (Input - (1 - torch.from_numpy(_trans).cuda(5))*_atm)/torch.from_numpy(_trans).cuda(5)
-            # _out= (Input - (1 - _trans)*_atm)/_trans
             _out = torch.clamp(_out, 0, 1)
 
             flag='test'
             _trans, _atm= net(Input,high,flag)
-            # 透射率图（transmission map）的细化（refinement）
-            # _GT = (Input - (1 - _trans)*_atm)/_trans
+         
             refine_t = t_matting(Input.detach().cpu().numpy(), _trans[0].detach().cpu().numpy())
             _GT = (Input - (1 - torch.from_numpy(refine_t).cuda(5))*_atm)/torch.from_numpy(refine_t).cuda(5)
            
