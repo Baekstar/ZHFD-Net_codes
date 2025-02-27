@@ -24,58 +24,7 @@ from model.airlight import process_image,blue_ratio_in_image
 from model.depthimg import DN
 from PIL import Image, ImageFilter
 from inference_single_image import inference
-def unsharp_mask(image, amount=1, radius=0.5, threshold=0):
-    """高级锐化技术"""
-    # 转为numpy数组
-    image_array = np.array(image, dtype=np.float32)
-    
-    # 高斯模糊
-    blurred = image.filter(ImageFilter.GaussianBlur(radius))
-    blurred_array = np.array(blurred, dtype=np.float32)
-    
-    # 计算锐化后的数组
-    sharp_array = image_array + (amount + 1) * (image_array - blurred_array)
-    
-    # 保证像素值在0-255之间
-    sharp_array = np.clip(sharp_array, 0, 255).astype(np.uint8)
-    
-    # 转为PIL图像并返回
-    sharp_image = Image.fromarray(sharp_array)
-    return sharp_image
-
-def apply_unsharp_mask(tensor, amount=1.5, radius=2):
-    """
-    对 PyTorch 张量应用 unsharp mask 锐化处理
-    参数:
-        tensor: 输入的 PyTorch 张量，形状为 (N, C, H, W)
-        amount: 锐化强度系数
-        radius: 高斯模糊半径
-    返回:
-        处理后的 PyTorch 张量，形状与输入相同
-    """
-    # 确保输入是 4D 张量 (N, C, H, W)
-    if tensor.dim() != 4:
-        raise ValueError("Input tensor must have 4 dimensions (N, C, H, W)")
-    
-    # 处理每一张图片
-    results = []
-    for img in tensor:
-        # 去掉批量维度，转为 NumPy 格式，范围 [0, 255]
-        img_np = img.permute(1, 2, 0).detach().cpu().numpy() * 255
-        img_pil = Image.fromarray(img_np.astype(np.uint8))  # 转为 PIL 图像
-        
-        # 应用 unsharp mask
-        img_sharp_pil = unsharp_mask(img_pil, amount=amount, radius=radius)
-        
-        # 转回 NumPy，归一化到 [0, 1]
-        img_sharp_np = np.array(img_sharp_pil).astype(np.float32) / 255
-        
-        # 转回 PyTorch 张量
-        img_sharp_tensor = torch.from_numpy(img_sharp_np).permute(2, 0, 1)  # 调整通道顺序
-        results.append(img_sharp_tensor)
-    
-    # 将所有处理后的张量拼接成 4D 张量
-    return torch.stack(results).to(tensor.device)
+# 
 def resize_width(image, target_w):
     h, w = image.shape[2], image.shape[3]
     scale = target_w / w
@@ -341,8 +290,6 @@ def test(args):
            
             _GT = torch.clamp(_GT, 0, 1)
         
-        # _out = apply_unsharp_mask(_out, amount=1.0, radius=1.0)  # 调整锐化参数
-        # _GT = apply_unsharp_mask(_GT, amount=1.0, radius=1.0)
         
         _out = TransF(_out, Hx, Wx)
         _GT = TransF(_GT, Hx, Wx)
