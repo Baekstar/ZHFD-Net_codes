@@ -25,12 +25,6 @@ from model.depthimg import DN
 from PIL import Image, ImageFilter
 from inference_single_image import inference
 # 
-def resize_width(image, target_w):
-    h, w = image.shape[2], image.shape[3]
-    scale = target_w / w
-    new_h, new_w = int(h * scale), target_w
-    resized_image = F.interpolate(image, size=(new_h, new_w), mode='bilinear', align_corners=False)
-    return resized_image
 
 def Transf(image, H,W):
     transfomer = trans.Compose([
